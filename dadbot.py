@@ -1,7 +1,11 @@
+# import the library requests, which we'll use to fetch a dad joke from the 
+# icanhazdadjoke.com API
 import requests
-class DadBot:
-    """Constructs the onboarding message and stores the state of which tasks were completed."""
 
+# Create the DadBot Class
+class DadBot:
+
+    # Create a constant that contains the default text for the message
     DAD_BLOCK = {
         "type": "section",
         "text": {
@@ -11,25 +15,28 @@ class DadBot:
             ),
         },
     }
+
+    # The constructor for the class. It takes the channel name as the a 
+    # parameter. It then sets the channel, username, and icon_emoji as instance
+    # variables.
     def __init__(self, channel):
         self.channel = channel
-        self.username = "Dad Bot"
-        self.icon_emoji = ":hear_no_evil:"
-        self.timestamp = ""
 
+    # Craft and return the entire message payload as a dictionary.
     def get_message_payload(self):
         return {
-            "ts": self.timestamp,
             "channel": self.channel,
-            "username": self.username,
-            "icon_emoji": self.icon_emoji,
             "blocks": [
                 self.DAD_BLOCK,
                 *self._get_dadjoke_block(),
             ],
         }
 
+    # Craft the dad joke by getting a random joke from the icanhazdadjoke.com 
+    # API and return the section that contains the dad joke.
     def _get_dadjoke_block(self):
-        joke = requests.get("https://icanhazdadjoke.com/", headers={'Accept': 'text/plain'})
-        text = f"{joke.text} :rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing:"
+        joke = requests.get("https://icanhazdadjoke.com/", 
+                            headers={'Accept': 'text/plain'})
+        text = f"{joke.text} :rolling_on_the_floor_laughing: "
+        ":rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing:"
         return {"type": "section", "text": {"type": "mrkdwn", "text": text}},
