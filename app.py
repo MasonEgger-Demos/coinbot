@@ -3,7 +3,7 @@ import logging
 from flask import Flask
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
-from dadbot import DadBot
+from coinbot import CoinBot
 
 # Initialize a Flask app to host the events adapter
 app = Flask(__name__)
@@ -13,14 +13,14 @@ slack_events_adapter = SlackEventAdapter(os.environ.get("SLACK_EVENTS_TOKEN"), "
 # Initialize a Web API client
 slack_web_client = WebClient(token=os.environ.get("SLACK_TOKEN"))
 
-def tell_joke(channel):
-    """Craft the DadJoke and send the message to the channel
+def flip_coin(channel):
+    """Craft the CoinBot, flip the coin and send the message to the channel
     """
-    # Get a new dad joke
-    dad_joke = DadBot(channel)
+    # Create a new CoinBot
+    coin_bot = CoinBot(channel)
 
     # Get the onboarding message payload
-    message = dad_joke.get_message_payload()
+    message = coin_bot.get_message_payload()
 
     # Post the onboarding message in Slack
     slack_web_client.chat_postMessage(**message)
@@ -42,13 +42,14 @@ def message(payload):
 
     # Check and see if the activation phrase was in the text of the message.
     # If so, execute the code to send the dad joke.
-    if "hey sammy, tell me a joke" in text.lower():
+    if "hey sammy, flip a coin" in text.lower():
         # Since the activation phrase was met, get the channel ID that the event
         # was executed on
         channel_id = event.get("channel")
 
-        # Execute the tell_joke function and send a dad joke to the channel
-        return tell_joke(channel_id)
+        # Execute the flip_coin function and send the results of
+        # flipping a coin to the channel
+        return flip_coin(channel_id)
 
 if __name__ == "__main__":
     # Create the logging object

@@ -2,9 +2,13 @@
 
 ## Introduction
 
-[Slack](https://slack.com/) is a communication platform designed for workplace productivity. It includes features such as direct messaging, public and private channels, voice and video calls, as well as bot integrations. A Slackbot is an automated program that can perform a variety of functions in slack, from sending messages to triggering tasks to alerting on certain events. 
+[Slack](https://slack.com/) is a communication platform designed for workplace productivity. It includes features such as direct messaging, public and private channels, voice and video calls, as well as bot integrations. A Slackbot is an automated program that can perform a variety of functions in Slack, from sending messages to triggering tasks to alerting on certain events.
 
-In this tutorial you will build a Slackbot in the [Python](https://www.python.org/) programming language. Python is a popular language that prides itself on simplicity and readability. Slack provides a rich [Python Slack API](https://github.com/slackapi/python-slackclient) for integrating with Slack to perform common tasks such as sending messages, adding emojis to message, etc. Slack also provides a [Python Slack Events API](https://github.com/slackapi/python-slack-events-api) for integrating with events in slack, allowing you to perform actions on events such as messages and mentions. This tutorial will use Python 3 and will not be compatible with Python 2.
+In this tutorial you will build a Slackbot in the [Python](https://www.python.org/) programming language. Python is a popular language that prides itself on simplicity and readability. Slack provides a rich [Python Slack API](https://github.com/slackapi/python-slackclient) for integrating with Slack to perform common tasks such as sending messages, adding emojis to messages, and much more. Slack also provides a [Python Slack Events API](https://github.com/slackapi/python-slack-events-api) for integrating with events in Slack, allowing you to perform actions on events such as messages and mentions.
+
+As a fun proof-of-concept that will demonstrate the power of Python and its Slack APIs, you will build a `CoinBot`&mdash;a Slackbot that monitors a channel and, when triggered, will flip a coin for you. You can then modify your `CoinBot` to fulfill any number of _slightly_ more practical applications.
+
+Note that this tutorial uses Python 3 and is not compatible with Python 2.
 
 ## Prerequisites
 
@@ -12,106 +16,107 @@ In order to follow this guide, you'll need:
 
 * A Slack Workspace that you have the ability to install applications into. If you created the workspace you have this ability. If you don't already have one, you can create one on the [Slack website](https://slack.com/create).
 
-* (Optional) A server or computer with a public ip address for development. We recommend a fresh installation of Ubuntu 20.04, a non-root user with `sudo` privileges, and SSH enabled. [You can follow this guide to initialize your server and complete these steps](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-20-04). 
+* (Optional) A server or computer with a public ip address for development. We recommend a fresh installation of Ubuntu 20.04, a non-root user with `sudo` privileges, and SSH enabled. [You can follow this guide to initialize your server and complete these steps](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-20-04).
 
 <$>[note]
 You may want to test this tutorial on a server that has a public ip address. Slack will need to be able to send events such as messages to your bot. If you are testing on a local machine you will need to port forward traffic through your firewall to your local system. If you are looking for a way to develop on a cloud server, check out this tutorial on [How To Use Visual Studio Code for Remote Development via the Remote-SSH Plugin](https://www.digitalocean.com/community/tutorials/how-to-use-visual-studio-code-for-remote-development-via-the-remote-ssh-plugin). 
 <$>
 
-## Step 1 — Creating the Slackbot in the Slack UI
+## Step 1 &mdash; Creating the Slackbot in the Slack UI
 
-The first thing we need to do is create our Slack app in the Slack API Control Panel. Login to your workspace in Slack via a web browser and navigate to the [API Control Panel](https://api.slack.com/apps). Here we will click on the **Create an App** button.
+First create your Slack app in the Slack API Control Panel. Log into your workspace in Slack via a web browser and navigate to the [API Control Panel](https://api.slack.com/apps). Now click on the **Create an App** button.
 
-![Create Your Slack App](https://i.imgur.com/LGsKT6X.png)
+![Create Your Slack App](https://i.imgur.com/h7VWJOX.png)
 
-Next you'll be prompted for the name of your app and to select a development slack workspace. For this tutorial name your app *DadBot* and select a workspace you have admin access to. Once you have done this click on the **Create App** button.
+Next you'll be prompted for the name of your app and to select a development Slack workspace. For this tutorial, name your app *CoinBot* and select a workspace you have admin access to. Once you have done this click on the **Create App** button.
 
-![Name Your Slack App and Select a Workspace](https://i.imgur.com/pKxppBq.png)
+![Name Your Slack App and Select a Workspace](https://imgur.com/E4hnhMU)
 
-Once your app is created you'll be presented with the following default app dashboard. This dashboard is where you manage your app by setting permissions, subscribing to events, installing the app into workspaces, etc.
+Once your app is created you'll be presented with the following default app dashboard. This dashboard is where you manage your app by setting permissions, subscribing to events, installing the app into workspaces, and more.
 
-![Default Slack App Panel](https://i.imgur.com/ce4nTbk.png)
+![Default Slack App Panel](https://i.imgur.com/ZjFaS1i.png)
 
-In order for our app to be able to post messages to a channel we need to grant the app permissions to send messages. To do this, click on the **Permissions** button in the control panel.
+In order for your app to be able to post messages to a channel you need to grant the app permissions to send messages. To do this, click the **Permissions** button in the control panel.
 
-![Select the Permissions Button in the Control Panel](https://i.imgur.com/pf1YlSE.png)
+![Select the Permissions Button in the Control Panel](https://i.imgur.com/IVcN8qg.png)
 
-When you arrive at the **OAuth & Permissions** page scroll down until you find the **Scopes** section of the page. You then need to find the **Bot Token Scopes** subsection in the scope and click on **Add an OAuth Scope** button.
+When you arrive at the **OAuth & Permissions** page, scroll down until you find the **Scopes** section of the page. Then find the **Bot Token Scopes** subsection in the scope and click on **Add an OAuth Scope** button.
 
-![Select the Add an OAuth Scope Button](https://i.imgur.com/dAxWKdZ.png)
+![Select the Add an OAuth Scope Button](https://i.imgur.com/wQnTSQr.png)
 
-When you click on that button you'll need to type in `chat:write` and select that permission to add it to your bot as shown below This will allow the app to post messages to channels that it has been invited to. For more information on the available permissions refer to [Slack's Documentation](https://api.slack.com/scopes).
+Click on that button and then type `chat:write`. Select that permission to add it to your bot. This will allow the app to post messages to channels that it can access. For more information on the available permissions refer to [Slack's Documentation](https://api.slack.com/scopes).
 
-![Add the chat:write Permission](https://i.imgur.com/afv3zlD.png)
+![Add the chat:write Permission](https://i.imgur.com/unQYPeL.png)
 
-Now that we've added the appropriate permission it is time to install our app into our Slack workspace. Scroll back up on the **OAuth & Permissions** page and click the **Install App to Workspace** button at the top.
+Now that you've added the appropriate permission it is time to install your app into your Slack workspace. Scroll back up on the **OAuth & Permissions** page and click the **Install App to Workspace** button at the top.
 
-![Install App to Workspace](https://i.imgur.com/C02TSnT.png)
+![Install App to Workspace](https://i.imgur.com/SiSxQB1.png)
 
-Once you click this button you'll need to review the actions the app can perform in the channel and then click the **Allow** button to finish the installation.
+Click this button and review the actions that the app can perform in the channel. Once you are satisfied, click the **Allow** button to finish the installation.
 
-![Install App to Workspace](https://i.imgur.com/5ZpYTT2.png)
+![Install App to Workspace](https://i.imgur.com/lWUBsYR.png)
 
-Once the bot is installed you'll be presented with a **Bot User OAuth Access Token** for your app to use when attempting to perform actions in the workspace. Go ahead and copy this token as we'll need it later.
+Once the bot is installed you'll be presented with a **Bot User OAuth Access Token** for your app to use when attempting to perform actions in the workspace. Go ahead and copy this token; you'll need it later.
 
-![Save the Access Token](https://i.imgur.com/A1uOLZy.png)
+![Save the Access Token](https://i.imgur.com/m1M9Ilt.png)
 
-Finally, you'll need to add your newly installed bot into a channel within your workspace. If you haven't created a channel yet you can use the *#general* channel that is created by default in your Slack workspace. *Locate the app in the **Apps** section of the navigation bar in your Slack client and click on it. Once you've done that open the **Details** menu in the top right hand side. If your slack client isn't full-screened it will look like an `i` in a circle.
+Finally, add your newly installed bot into a channel within your workspace. If you haven't created a channel yet you can use the *#general* channel that is created by default in your Slack workspace. Locate the app in the **Apps** section of the navigation bar in your Slack client and click on it. Once you've done that open the **Details** menu in the top right hand side. If your Slack client isn't full-screened it will look like an `i`  a circle.
 
-![Click on the App Details Icon](https://i.imgur.com/P21Poph.png)
+![Click on the App Details Icon](https://i.imgur.com/OJ5yTXP.png)
 
-To finish adding your app to a channel you'll need to click on the **More** button represented by three dots in the details page and select **Add this app to a channel...**. Type in your channel into the modal that appears and click **Add** to add the bot to the channel.
+To finish adding your app to a channel, click on the **More** button represented by three dots in the details page and select **Add this app to a channel...**. Type your channel into the modal that appears and click **Add**.
 
-![Add App to a Channel](https://i.imgur.com/9h9I9uC.png)
+![Add App to a Channel](https://i.imgur.com/ojUMqeI.png)
 
-Now that you've successfully created and added your app to a channel within your workspace, once we write the code your app will be able to post messages in that channel. In the next section we'll start writing the Python code that will power this app. 
+You've now successfully created your app and added it to a channel within your Slack workspace. After you write the code for your app it will be able to post messages in that channel. In the next section you'll start writing the Python code that will power `CooinBot`.
 
+## Step 2 &mdash; Setting Up Your Python Developer Environment
 
-## Step 2 — Setting Up Our Python Developer Environment
+First let's setup your Python environment so you can develop the Slackbot.
 
-Now let's setup our Python environment so we can develop the Slackbot.
-
-The first thing we need to do is to open a terminal and install `python3` and the relevant tools onto our system.
+Open a terminal and install `python3` and the relevant tools onto your system:
 
 ```command
 sudo apt install python3 python3-venv
 ```
 
-Next we need to do is create a virtual environment to isolate our Python packages from the system installation of Python. We need to create a directory to create our virtual environment into. We'll do this at *~/.venvs*
+Next you will create a virtual environment to isolate your Python packages from the system installation of Python. To do this, first create a directory into which you will create your virtual environment. Make a new directory at `~/.venvs`:
 
 ```command
 mkdir ~/.venvs
 ```
 
-Now we can create our Python virtual environment:
+Now create your Python virtual environment:
 
 ```command
 python3 -m venv ~/.venvs/slackbot
 ```
 
-Next, we need to activate our virtual environment so we can use its Python installation and install packages.
+Next, activate your virtual environment so you can use its Python installation and install packages.
 
 ```command
 source ~/.venvs/slackbot/bin/activate
 ```
 
-You will now see that your shell prompt will now show the virtual environment in parenthesis. For example:
+Your shell prompt will now show the virtual environment in parenthesis. It will look something like this:
 
 ```shell
 (slackbot) sammy@slackbotserver:~$
 ```
 
-Now we can install the necessary Python packages into our virtual environment.
+Now use `pip` to install the necessary Python packages into your virtual environment.
 
 ```command
-pip install slackclient slackeventsapi Flask requests
+pip install slackclient slackeventsapi Flask
 ```
 
-Now that we have our developer environment setup we can start writing our Python Slackbot.
+`slackclient` and `slackeventsapi` facilitate Python's interaction with Slack's APIs. `Flask` is a popular micro web framework that you will use to deploy your app.
 
-## Step 3 — Creating the Slackbot Message Class in Python
+Now that you have your developer environment set up, you can start writing your Python Slackbot.
 
-Messages in Slack are sent via a [specifically formatted JSON payload](https://api.slack.com/reference/surfaces/formatting). Below is an example of the JSON that our Slackbot will craft and send as a message. 
+## Step 3 &mdash; Creating the Slackbot Message Class in Python
+
+Messages in Slack are sent via a [specifically formatted JSON payload](https://api.slack.com/reference/surfaces/formatting). This is an example of the JSON that your Slackbot will craft and send as a message:
 
 ```json
 {
@@ -121,220 +126,278 @@ Messages in Slack are sent via a [specifically formatted JSON payload](https://a
          "type":"section",
          "text":{
             "type":"mrkdwn",
-            "text":"Sure! Here\\'s a doozy for you:\\n\\n"
+            "text":"Sure! Flipping a coin....\n\n"
          }
       },
       {
          "type":"section",
          "text":{
             "type":"mrkdwn",
-            "text":"I finally bought the limited edition Thesaurus that I\\'ve always wanted. When I opened it, all the pages were blank.\\r\\nI have no words to describe how angry I am. :rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing:"
+            "text":"*flips coin* The result is Tails."
          }
       }
    ]
 }
 ```
 
-We could manually craft this JSON and send it, but instead let's build a Python class that not only crafts this payload, but fetches a random dad joke to send. 
+You could manually craft this JSON and send it, but instead let's build a Python class that not only crafts this payload, but also simulates a coin flip.
 
-First create a file named `dadbot.py`. 
+First use the `touch` command to create a file named `coinbot.py`:
 
 ```command
-touch dadbot.py
+touch coinbot.py
 ```
 
-Next, open this file with your favorite text editor and add the following lines of code to import the relevant libraries for our app. The only library we will need for this class is the `requests` library, which allows us to make HTTP requests to the dad joke API. 
+Next, open this file with `nano` or your favorite text editor:
 
-Add the following lines to `dadbot.py` to import all of the necessary libraries.
+```command
+nano coinbot.py
+```
+
+Now add the following lines of code to import the relevant libraries for your app. The only library you need for this class is the `random` library from the Python Standard Library. This library will allow us to simulate a coin flip.
+
+Add the following lines to `coinbot.py` to import all of the necessary libraries.
 
 ```python
-# import the library requests, which we'll use to fetch a dad joke from the 
-# icanhazdadjoke.com API
-import requests
+# import the random library to help us generate the random numbers
+import random
 ```
 
-Next we need to create our `DadBot` class. We will create an instance of this class
+Next, create your `CoinBot` class and an instance of this class
 to craft the message payload.
 
-Add the following lines `dadbot.py` to create the `DadBot` class.
+Add the following lines to `coinbot.py` to create the `CoinBot` class.
 
 ```python
-class DadBot:
+...
+class CoinBot:
 ```
 
-Now we indent in one and create the constants, constructors and methods necessary for our class. First let's create the constant that will hold the base of our message payload. In this section we specify that this constant is of the section type, that the text is formatted via markdown and the text we wish to display in this section. You can read more about the different payload options in the [official Slack message payload documentation](https://api.slack.com/reference/messaging/payload). 
+Now indent by one and create the constants, constructors and methods necessary for your class. First let's create the constant that will hold the base of your message payload. This section specifies that this constant is of the section type and that the text is formatted via markdown. It also specifies what text you wish to display. You can read more about the different payload options in the [official Slack message payload documentation](https://api.slack.com/reference/messaging/payload). 
 
-Append the following lines to `dadbot.py` to create the base template for the payload.
+Append the following lines to `coinbot.py` to create the base template for the payload.
 
 ```python
+...
     # Create a constant that contains the default text for the message
-    DAD_BLOCK = {
+    COIN_BLOCK = {
         "type": "section",
         "text": {
             "type": "mrkdwn",
             "text": (
-                "Sure! Here's a doozy for you:\n\n"
+                "Sure! Flipping a coin....\n\n"
             ),
         },
     }
 ```
 
-Next we need to create a constructor for our class so we can create a separate instance of our bot for every request. Don't worry about memory overhead hear, the Python garbage collector will clean up these instances once they are no longer needed.  This code sets the recipient channel based on a parameter passed to the constructor, as well as sets the username and Slack icon.
+Next create a constructor for your class so that you can create a separate instance of your bot for every request. Don't worry about memory overhead here; the Python garbage collector will clean up these instances once they are no longer needed.  This code sets the recipient channel based on a parameter passed to the constructor.
 
-Append the following lines to `dadbot.py` to create the constructor.
+Append the following lines to `coinbot.py` to create the constructor.
 
 ```python
-    # The constructor for the class. It takes the channel name as the a 
+...
+    # The constructor for the class. It takes the channel name as the a
     # parameter and sets it as an instance variable.
     def __init__(self, channel):
         self.channel = channel
 ```
 
-Next we will write the code that actually fetches the dad joke from *https://icanhazdadjoke.com* using the `requests` library and creates a slack block section that is properly formatted. 
+Now write the code that simulates to flip a coin. We'll randomly generate a one or zero, representing heads or tails respectively. 
 
-Append the following lines to `dadbot.py` to fetch the dad joke from the REST API and return the crafted joke section.
+Append the following lines to `coinbot.py` to simulate the coin flip and return the crafted payload.
 
 ```python
-    # Craft the dad joke by getting a random joke from the icanhazdadjoke.com 
-    # API and return the section that contains the dad joke.
-    def _get_dadjoke_block(self):
-        joke = requests.get("https://icanhazdadjoke.com/", 
-                            headers={'Accept': 'text/plain'})
-        text = f"{joke.text} :rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing:"
+...
+    # Generate a random number to simulate flipping a coin. Then return the 
+    # crafted slack payload with the coin flip message.
+    def _flip_coin(self):
+        rand_int =  random.randint(0,1)
+        if rand_int == 0:
+            results = "Heads"
+        else:
+            results = "Tails"
+
+        text = f"The result is {results}"
+
         return {"type": "section", "text": {"type": "mrkdwn", "text": text}},
 ```
 
-Finally, we create a method that crafts and returns the entire message payload, including the data from our constructor and by calling our `_get_dadjoke_block` method. 
+Finally, create a method that crafts and returns the entire message payload, including the data from your constructor, by calling your `_flip_coin` method.
 
+Append the following lines to `coinbot.py` to create the method that will generate the finished payload.
 
-Append the following lines to `dadbot.py` to create the method that will create the finished method payload.
 ```python
+...
     # Craft and return the entire message payload as a dictionary.
     def get_message_payload(self):
         return {
             "channel": self.channel,
             "blocks": [
-                self.DAD_BLOCK,
-                *self._get_dadjoke_block(),
+                self.COIN_BLOCK,
+                *self._flip_coin(),
             ],
         }
 ```
 
-We are now finished with the `DadBot` class and it is ready for testing. Before we move on verify that your finished file, `dadbot.py` contains the following:
+You are now finished with the `CoinBot` class and it is ready for testing. Before continuing, verify that your finished file, `coinbot.py`, contains the following:
+
 ```python
-# import the library requests, which we'll use to fetch a dad joke from the 
-# icanhazdadjoke.com API
-import requests
+# import the random library to help us generate the random numbers
+import random
 
 # Create the DadBot Class
-class DadBot:
+class CoinBot:
 
     # Create a constant that contains the default text for the message
-    DAD_BLOCK = {
+    COIN_BLOCK = {
         "type": "section",
         "text": {
             "type": "mrkdwn",
             "text": (
-                "Sure! Here's a doozy for you:\n\n"
+                "Sure! Flipping a coin....\n\n"
             ),
         },
     }
 
     # The constructor for the class. It takes the channel name as the a 
-    # parameter and sets it as an instance variable.
+    # parameter and then sets it as an instance variable
     def __init__(self, channel):
         self.channel = channel
 
-    # Craft the dad joke by getting a random joke from the icanhazdadjoke.com 
-    # API and return the section that contains the dad joke.
-    def _get_dadjoke_block(self):
-        joke = requests.get("https://icanhazdadjoke.com/", 
-                            headers={'Accept': 'text/plain'})
-        text = f"{joke.text} :rolling_on_the_floor_laughing: "
-        ":rolling_on_the_floor_laughing: :rolling_on_the_floor_laughing:"
+    # Generate a random number to simulate flipping a coin. Then return the 
+    # crafted slack payload with the coin flip message.
+    def _flip_coin(self):
+        rand_int =  random.randint(0,1)
+        if rand_int == 0:
+            results = "Heads"
+        else:
+            results = "Tails"
+
+        text = f"The result is {results}"
+
         return {"type": "section", "text": {"type": "mrkdwn", "text": text}},
 
     # Craft and return the entire message payload as a dictionary.
     def get_message_payload(self):
         return {
             "channel": self.channel,
-            "username": self.username,
-            "icon_emoji": self.icon_emoji,
             "blocks": [
-                self.DAD_BLOCK,
-                *self._get_dadjoke_block(),
+                self.COIN_BLOCK,
+                *self._flip_coin(),
             ],
         }
 ```
 
-Now that we have a Python class ready to do the work for our Slackbot, let's ensure that this class produces a useful message payload and that we can send it to our workspace.
+Save and close the file.
 
+Now that you have a Python class ready to do the work for your Slackbot, let's ensure that this class produces a useful message payload and that you can send it to your workspace.
 
-## Step 4 - Testing Our Message 
+## Step 4 &mdash; Testing Your Message
 
 Now let's test that this class produces a proper payload. Create a file named
-`dadbot_test.py` and add the following code. **Be sure to change the channel name in the instantiation of the DadBot class `dad_joke = DadBot("#YOUR_CHANNEL_HERE")`**. This code will create a slack client in Python that will send a message to the channel you specify that you have already installed the app into.
+`coinbot_test.py`:
+
+```command
+nano coinbot_test.py
+```
+
+Now add the following code. **Be sure to change the channel name in the instantiation of the coinbot class `coin_bot = coinbot("#<^>YOUR_CHANNEL_HERE<^>")`**. This code will create a Slack client in Python that will send a message to the channel you specify that you have already installed the app into:
 
 ```python
 from slack import WebClient
-from dadbot import DadBot
+from coinbot import CoinBot
 import os
 
 # Create a slack client
 slack_web_client = WebClient(token=os.environ.get("SLACK_TOKEN"))
 
-# Get a new dad joke
-dad_joke = DadBot("#YOUR_CHANNEL_HERE")
+# Get a new CoinBot
+coin_bot = CoinBot("#<^>YOUR_CHANNEL_HERE<^>")
 
 # Get the onboarding message payload
-message = dad_joke.get_message_payload()
+message = coin_bot.get_message_payload()
 
 # Post the onboarding message in Slack
 slack_web_client.chat_postMessage(**message)
 ```
 
-Before you can run this file you will need to export your Slack token that you saved in part one as an environment variable. 
+Save and close the file.
+
+Before you can run this file you will need to export the Slack token that you saved in Step 1 as an environment variable.
 
 ```command
-export SLACK_TOKEN="xbob-SOMETOKENSTUFF"
+export SLACK_TOKEN="<^>your_bot_user_token<^>"
 ```
 
-You can test this file and verify that the payload is produced and sent by running the following script in your terminal. Make sure that your virtual environment is activated. You can verify this by seeing the `(slackbot)` text at the front of your bash prompt. Once you run this command you should get a message from your Slackbot with a _hilarious_ dad joke.
+Now test this file and verify that the payload is produced and sent by running the following script in your terminal. Make sure that your virtual environment is activated. You can verify this by seeing the `(slackbot)` text at the front of your bash prompt. Run this command you will receive a message from your Slackbot with the results of a coin flip.
 
 ```command
-python dadbot_test.py
+python coinbot_test.py
 ```
 
-Check the channel that you installed your app into and verify that your bot did indeed send a joke. It will not be the exact same joke as this. 
+Check the channel that you installed your app into and verify that your bot did indeed send the coin flip message. It will not be the exact results as this.
 
-![DadJoke Test](https://i.imgur.com/Rp9Cu0P.png)
+![Coin Flip Test](https://i.imgur.com/NPfnw0k.png)
 
-Now that your Slackbot has been verified to create jokes and deliver them, lets create a [Flask](https://flask.palletsprojects.com/en/1.1.x/) to perpetually run this app and make it send a dad joke when it sees certain text in messages sent in the channel.
+Now that you've verified that your Slackbot can flip a coin, create a message, and deliver the message, lets create a [Flask](https://flask.palletsprojects.com/en/1.1.x/) to perpetually run this app and make it simulate a coin flip and share the results whenever it sees certain text in messages sent in the channel.
 
-## Step 5 — Creating a Flask Application to Run Our Slackbot
+## Step 5 &mdash; Creating a Flask Application to Run Your Slackbot
 
-Now that we have a functioning application that can send messages to our slack workspace, we need to create a long running process so our bot can listen to messages sent in the channel and reply to them if the text meets certain criteria. We're going to use the Python web framework [Flask](https://flask.palletsprojects.com/en/1.1.x/) to run this process and listen for events in our channel.
+Now that you have a functioning application that can send messages to your Slack workspace, you need to create a long running process so your bot can listen to messages sent in the channel and reply to them if the text meets certain criteria. You're going to use the Python web framework [Flask](https://flask.palletsprojects.com/en/1.1.x/) to run this process and listen for events in your channel.
 
 <$>[note]
-In this section we will be running our Flask application from a server with a public IP address so the Slack API can send us events. If you are running this locally on your personal workstation you will need to forward the port from your personal firewall to the port that will be running on your workstation. These ports can be the same and this tutorial will be setup to use port 3000.
+In this section you will be running your Flask application from a server with a public IP address so that the Slack API can send you events. If you are running this locally on your personal workstation you will need to forward the port from your personal firewall to the port that will be running on your workstation. These ports can be the same, and this tutorial will be setup to use port `3000`.
 <$>
 
-The first thing we need to do is create the file for our Flask app. Name this file `app.py`
+First adjust your firewall settings to allow traffic through port `3000`:
+
+```command
+sudo ufw allow 3000
+```
+
+Now check the status of `ufw`:
+
+```command
+sudo ufw status
+```
+
+You will see an output like this:
+
+```
+[secondary_label Output]
+Status: active
+
+To                         Action      From
+--                         ------      ----
+OpenSSH                    ALLOW       Anywhere
+3000                       ALLOW       Anywhere
+OpenSSH (v6)               ALLOW       Anywhere (v6)
+3000 (v6)                  ALLOW       Anywhere (v6)
+```
+
+Now create the file for your Flask app. Name this file `app.py`:
 
 ```command
 touch app.py
 ```
 
-Next, open this file in your favorite text editor and add the following import statements. We'll import the following libraries for the following reasons.
+Next, open this file in your favorite text editor:
 
-* `import os` - So we can access environment variables
+```command
+nano app.py
+```
+
+Now add the following import statements. You'll import the following libraries for the following reasons:
+
+* `import os` - So you can access environment variables
 * `import logging` - To log the events of the app
-* `from flask import Flask` - So we can create a Flask app
-* `from slack import WebClient` - So we can send messages via Slack
-* `from slackeventsapi import SlackEventAdapter` - So we can receive events from Slack and process them
-* `from dadbot import DadBot` - So we can create an instance of our DadBot and generate the message payload.
+* `from flask import Flask` - So you can create a Flask app
+* `from slack import WebClient` - So you can send messages via Slack
+* `from slackeventsapi import SlackEventAdapter` - So you can receive events from Slack and process them
+* `from coinbot import CoinBot` - So you can create an instance of your CoinBot and generate the message payload.
 
-Append the following lines to `app.py` to import all of the necessary libraries.
+Append the following lines to `app.py` to import all of the necessary libraries:
 
 ```python
 import os
@@ -342,48 +405,55 @@ import logging
 from flask import Flask
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
-from dadbot import DadBot
+from coinbot import CoinBot
 ```
 
-Now we need to create our Flask app and register a Slack Event Adapter to our Slack app at the `/slack/events` endpoint. This will create a route in our Slack app where Slack events will be sent and ingested. To do this we will need to get another token from our slack app, which we will do later in the tutorial. Once we get this variable we will export it as an environment variable named *SLACK_EVENTS_TOKEN*. We'll go ahead and write our code to read it in when creating the `SlackEventAdapter` even though we haven't set it yet.
+Now create your Flask app and register a Slack Event Adapter to your Slack app at the `/slack/events` endpoint. This will create a route in your Slack app where Slack events will be sent and ingested. To do this you will need to get another token from your Slack app, which you will do later in the tutorial. Once you get this variable you will export it as an environment variable named *SLACK_EVENTS_TOKEN*. Go ahead and write your code to read it in when creating the `SlackEventAdapter`, even though you haven't set the token yet.
 
-Append the following lines to `app.py` to create the Flask app and register the events adapter into this app.
+Append the following lines to `app.py` to create the Flask app and register the events adapter into this app:
+
 ```python
+...
 # Initialize a Flask app to host the events adapter
 app = Flask(__name__)
 
-# Create an events adapter and register it to an endpoint in the slack app for event injestion.
+# Create an events adapter and register it to an endpoint in the slack app for event ingestion.
 slack_events_adapter = SlackEventAdapter(os.environ.get("SLACK_EVENTS_TOKEN"), "/slack/events", app)
 ```
 
-Next we need to create a web client object that will allow our app to perform actions in the workspace, specifically to send messages. This is similar to what we did when we tested our `DadBot.py` file previously. 
+Next create a web client object that will allow your app to perform actions in the workspace, specifically to send messages. This is similar to what you did when you tested your `coinbot.py` file previously.
 
-Append the following line to `app.py` to create this slack_web_client.
+Append the following line to `app.py` to create this slack_web_client:
+
 ```python
+...
 # Initialize a Web API client
 slack_web_client = WebClient(token=os.environ.get("SLACK_TOKEN"))
 ```
 
-Next we need to create a function that can be called that will create an instance of DadBot, use this instance to create a message payload and pass the message payload to the slack web client for delivery. This function will take in a single parameter, channel, that will specify which channel to send the message too.
+Now create a function that can be called that will create an instance of `CoinBot`, and then use this instance to create a message payload and pass the message payload to the Slack web client for delivery. This function will take in a single parameter, `channel`, which will specify what channel receives the message.
 
-Append the following lines to `app.py` to create the function mentioned above.
+Append the following lines to `app.py` to create this function:
+
 ```python
-def tell_joke(channel):
-    """Craft the DadJoke and send the message to the channel
+...
+def flip_coin(channel):
+    """Craft the CoinBot, flip the coin and send the message to the channel
     """
-    # Get a new dad joke
-    dad_joke = DadBot(channel)
+    # Create a new CoinBot
+    coin_bot = CoinBot(channel)
 
     # Get the onboarding message payload
-    message = dad_joke.get_message_payload()
+    message = coin_bot.get_message_payload()
 
     # Post the onboarding message in Slack
     slack_web_client.chat_postMessage(**message)
 ```
 
-Now that we have created a function to handle the messaging aspects of our app, we need to create one that monitors Slack events for a certain action and then executes our bot. We're going to configure our app to respond with a dad joke when it sees the phrase "Hey Sammy, Tell me a joke". We're going to accept any version of this, case and appended punctuation won't prevent the app from telling a joke. 
+Now that you have created a function to handle the messaging aspects of your app, create one that monitors Slack events for a certain action and then executes your bot. You're going to configure your app to respond the results of a simulated coin flip when it sees the phrase "Hey Sammy, Flip a coin". You're going to accept any version of this&mdash;case won't prevent the app from responding.
 
-First we need to decorate our function with the `@slack_events_adapter.on` syntax that allows our function to receive events. We'll specify that we only want the `message` events and have our function accept a payload parameter containing all of the necessary Slack information. Once we have this payload we will parse out the text, analyze it, and if we see the activation phrase we'll have our app send a dad joke. 
+<!--Note: hit some edge cases with punctuation. hey sammy[.|;|:| ]-->
+First decorate your function with the `@slack_events_adapter.on` syntax that allows your function to receive events. Specify that you only want the `message` events and have your function accept a payload parameter containing all of the necessary Slack information. Once you have this payload you will parse out the text, analyze it, and if you see the activation phrase your app will send the results of a simulated coin flip.
 
 Append the following code to `app.py` to receive, analyze, and act on incoming messages.
 ```python
@@ -392,7 +462,7 @@ Append the following code to `app.py` to receive, analyze, and act on incoming m
 @slack_events_adapter.on("message")
 def message(payload):
     """Parse the message event, and if the activation string is in the text, 
-    send a dad joke
+    simulate a coin flip and send the result.
     """
 
     # Get the event data from the payload
@@ -402,19 +472,20 @@ def message(payload):
     text = event.get("text")
 
     # Check and see if the activation phrase was in the text of the message.
-    # If so, execute the code to send the dad joke.
-    if "hey sammy, tell me a joke" in text.lower():
+    # If so, execute the code to flip a coin.
+    if "hey sammy, flip a coin" in text.lower():
         # Since the activation phrase was met, get the channel ID that the event
         # was executed on
         channel_id = event.get("channel")
 
-        # Execute the tell_joke function and send a dad joke to the channel
-        return tell_joke(channel_id)
+        # Execute the flip_coin function and send the results of
+        # flipping a coin to the channel
+        return flip_coin(channel_id)
 ```
 
-Finally, we need to create a `main` section that will create a logger so we can see the internals of our application as well as lauch the app on our external IP address on port 3000. In order to injest the events from Slack, such as when a new message is sent, we must test our application on a public facing IP address.
+Finally, create a `main` section that will create a logger so you can see the internals of your application as well as launch the app on your external IP address on port `3000`. In order to ingest the events from Slack, such as when a new message is sent, you must test your application on a public-facing IP address.
 
-Append the following lines to `app.py` to setup our main section.
+Append the following lines to `app.py` to setup your main section.
 ```python
 if __name__ == "__main__":
     # Create the logging object
@@ -426,12 +497,12 @@ if __name__ == "__main__":
     # Add the StreamHandler as a logging handler
     logger.addHandler(logging.StreamHandler())
 
-    # Run our app on our externally facing IP address on port 3000 instead of
+    # Run your app on your externally facing IP address on port 3000 instead of
     # running it on localhost, which is traditional for development.
     app.run(host='0.0.0.0', port=3000)
 ```
 
-We are now finished with the Flask and it is ready for testing. Before we move on verify that your finished file, `app.py` contains the following:
+You are now finished with the Flask and it is ready for testing. Before you move on verify that your finished file, `app.py` contains the following:
 
 ```python
 import os
@@ -439,7 +510,7 @@ import logging
 from flask import Flask
 from slack import WebClient
 from slackeventsapi import SlackEventAdapter
-from dadbot import DadBot
+from coinbot import CoinBot
 
 # Initialize a Flask app to host the events adapter
 app = Flask(__name__)
@@ -449,14 +520,14 @@ slack_events_adapter = SlackEventAdapter(os.environ.get("SLACK_EVENTS_TOKEN"), "
 # Initialize a Web API client
 slack_web_client = WebClient(token=os.environ.get("SLACK_TOKEN"))
 
-def tell_joke(channel):
-    """Craft the DadJoke and send the message to the channel
+def flip_coin(channel):
+    """Craft the CoinBot, flip the coin and send the message to the channel
     """
-    # Get a new dad joke
-    dad_joke = DadBot(channel)
+    # Create a new CoinBot
+    coin_bot = CoinBot(channel)
 
     # Get the onboarding message payload
-    message = dad_joke.get_message_payload()
+    message = coin_bot.get_message_payload()
 
     # Post the onboarding message in Slack
     slack_web_client.chat_postMessage(**message)
@@ -467,7 +538,7 @@ def tell_joke(channel):
 @slack_events_adapter.on("message")
 def message(payload):
     """Parse the message event, and if the activation string is in the text, 
-    send a dad joke
+    simulate a coin flip and send the result.
     """
 
     # Get the event data from the payload
@@ -477,14 +548,15 @@ def message(payload):
     text = event.get("text")
 
     # Check and see if the activation phrase was in the text of the message.
-    # If so, execute the code to send the dad joke.
-    if "hey sammy, tell me a joke" in text.lower():
+    # If so, execute the code to flip a coin.
+    if "hey sammy, flip a coin" in text.lower():
         # Since the activation phrase was met, get the channel ID that the event
         # was executed on
         channel_id = event.get("channel")
 
-        # Execute the tell_joke function and send a dad joke to the channel
-        return tell_joke(channel_id)
+        # Execute the flip_coin function and send the results of
+        # flipping a coin to the channel
+        return flip_coin(channel_id)
 
 if __name__ == "__main__":
     # Create the logging object
@@ -501,34 +573,36 @@ if __name__ == "__main__":
     app.run(host='0.0.0.0', port=3000)
 ```
 
-Now that we have our Flask app ready to serve our application let's test it out.
+Save and close the file.
 
-## Step 6 - Running our Flask App
+Now that your Flask app is ready to serve your application let's test it out.
 
-Finally, we can bring everything together and execute our app. 
+## Step 6 &mdash; Running Your Flask App
 
-First, we need to add our running application as an authorized handler for our Slackbot.
+Finally, bring everything together and execute your app.
 
-Navigate to the **Basic Information** section of your app in the [Slack UI](https://api.slack.com). Scroll down until you find the **App Credentials** section. 
+First, add your running application as an authorized handler for your Slackbot.
 
-![Slack Signing Secret](https://i.imgur.com/2amAaNk.png)
+Navigate to the **Basic Information** section of your app in the [Slack UI](https://api.slack.com). Scroll down until you find the **App Credentials** section.
+
+![Slack Signing Secret](https://i.imgur.com/lLB1jEB.png)
 
 Copy the **Signing Secret** and export it as the environment variable *SLACK_EVENTS_TOKEN*.
 
 ```command
-export SLACK_EVENTS_TOKEN="MY_SIGNING_SECRET_TOKEN"
+export SLACK_EVENTS_TOKEN="<^>MY_SIGNING_SECRET_TOKEN<^>"
 ```
 
-With this we have all the necessary API tokens to run our app. Refer to Part 1 if you need a refresher on how to export your *SLACK_TOKEN*. Now we can start our app and verify that it is indeed running. Ensure that your virtual environment is activated and run the following command to start your Flask app.
+With this you have all the necessary API tokens to run your app. Refer to Part 1 if you need a refresher on how to export your *SLACK_TOKEN*. Now you can start your app and verify that it is indeed running. Ensure that your virtual environment is activated and run the following command to start your Flask app.
 
 ```command
 python3 app.py
 ```
 
-You should see output similar to below:
+You will see an output like this:
 
 ```
-(slackbot) [20:04:03] sammy:dadbot$ python app.py
+(slackbot) [20:04:03] sammy:coinbot$ python app.py
  * Serving Flask app "app" (lazy loading)
  * Environment: production
    WARNING: This is a development server. Do not use it in a production deployment.
@@ -537,57 +611,61 @@ You should see output similar to below:
  * Running on http://0.0.0.0:3000/ (Press CTRL+C to quit)
  ```
 
-To verify that our app is up curl the IP address of your server with the correct port at `/slack/events` as shown below:
+To verify that your app is up, open a new terminal window and `curl` the IP address of your server with the correct port at `/slack/events` as shown below:
 
 ```command
-[15:06:33] sammy $ curl http://YOUR_IP_ADDRESS:3000/slack/events
+curl http://<^>YOUR_IP_ADDRESS<^>:3000/slack/events
+```
+
+`curl` will return the following:
+
+```
+[secondary_label Output]
 These are not the slackbots you're looking for.
 ```
 
-You should receive the message *These are not the slackbots you're looking for.* as a response, indicating that your app is up and running.
+Receiving the message *These are not the slackbots you're looking for.*, indicates that your app is up and running.
 
-We can leave this Flask application running and finish configuring our app in the [Slack UI](https://api.slack.com).
+Now leave this Flask application running while you finish configuring your app in the [Slack UI](https://api.slack.com).
 
-We need to grant our app the appropriate permissions so our app will be able to listen to messages and respond accordingly. 
+First grant your app the appropriate permissions so that it can listen to messages and respond accordingly. Click on **Event Subscriptions** in the UI sidebar and toggle the **Enable Events** radio button.
 
-First, click on **Event Subscriptions** in the UI sidebar and toggle the **Enable Events** radio button. 
+![Enable Events Button](https://i.imgur.com/lLB1jEB.png)
 
-![Enable Events Button](https://i.imgur.com/qKT1zph.png)
+Once you've done that, type in your IP address, port, and `/slack/events` endpoint into the **Request URL** field. Don't forget the *http* protocol prefix. Slack will make an attempt to connect to your endpoint. Once it has successfully done so you'll see a green check mark with the word **Verified** next to it.
 
-Once you've done that, type in your IP address, port, and `/slack/events` endpoint into the **Request URL** field. Don't forget the *http* protocol prefix. Slack will make an attempt to connect to your endpoint. Once it has successfully done so you'll see a green check mark with the work **Verified** next to it.
+![Event Subscriptions Request URL](https://i.imgur.com/9wqUJwd.png)
 
-![Event Subscriptions Request URL](https://i.imgur.com/9mtT9gH.png)
+Next, expand the **Subscribe to bot events** and add the `message.channels` permission to your app. This will allow your app to receive messages from your channel and process them.
 
-Next, we need to expand the **Subscribe to bot events** and add the `message.channels` permission to our app. This will allow our app to receive the messages from our channel and process them.
+![Subscribe to bot events permissions](https://i.imgur.com/sCYYhM8.png)
 
-![Subscribe to bot events permissions](https://i.imgur.com/zX40jCn.png)
+Once you've done this you will see the event listed in your **Subscribe to bot events** section. Next click the green **Save Changes** button in the bottom right hand corner.
 
-Once you've done this you should see the event listed in your **Subscribe to bot events** section. Next click the green **Save Changes** button in the bottom right hand corner.
+![Confirm and Save changes](https://i.imgur.com/NLNbmB4.png)
 
-![Confirm and Save changes](https://i.imgur.com/MeWBib7.png)
+Once you do this you'll see a yellow banner across the top of the screen informing you that you need to reinstall your app for the following changes to apply. Every time you change permissions you'll need to reinstall your app. Click on the **reinstall your app** link in this banner to reinstall your app.
 
-Once you do this you'll see a yellow banner across the top of the screen informing you that you'll need to reinstall your app for the following changes to apply. Every time you change permissions you'll have to reinstall your app. Click on the **reinstall your app** link in this banner to reinstall your app.
-
-[Reinstall your app banner](https://i.imgur.com/N0QAj2R.png)
+![Reinstall your app banner](https://i.imgur.com/s9WyZWs.png)
 
 You'll be presented with a confirmation screen summarizing the permissions your bot will have and asking if you want to allow its installation. Click on the green **Allow** button to finish the installation process.
 
-![Reinstall confirmation](https://i.imgur.com/ng0HIKd.png)
+![Reinstall confirmation](https://i.imgur.com/KQrNqzK.png)
 
-Now that you've done this your app should be ready. Go back to the channel that your bot is installed in and send a message containing the phrase *Hey Sammy, Tell me a joke* in it. Your bot should reply with a hilarious dad joke. Congrats! You've created a Slackbot!
+Now that you've done this your app should be ready. Go back to the channel that you installed `CoinBot` into and send a message containing the phrase *Hey Sammy, Flip a coin* in it. Your bot will flip a coin and reply with the results. Congrats! You've created a Slackbot!
 
-![Hey Sammy, Tell me a joke](https://i.imgur.com/15GoRF1.png)
+![Hey Sammy, Flip a coin](https://i.imgur.com/8SoSu5A.png)
 
-## Step 7 — Deploying the Application for Production
-Once you are done developing your application and are ready to move it to production you'll need to deploy it to a server. This will be necessary since the Flask development server is not a secure production environment. You'll be better served if you deploy your app using a *WSGI* and maybe even securing a domain name and giving your server a DNS record. There are many options for deploying Flask applications, some of which are listed below. Follow one of the following articles to deploy your application to a server:
+## Conclusion
+
+Once you are done developing your application and you are ready to move it to production, you'll need to deploy it to a server. This is necessary because the Flask development server is not a secure production environment. You'll be better served if you deploy your app using a [WSGI](https://wsgi.readthedocs.io/en/latest/index.html) and maybe even securing a domain name and giving your server a DNS record. There are many options for deploying Flask applications, some of which are listed below. Follow one of the following articles to deploy your application to a server:
 
 * [Deploy your Flask application to Ubuntu 20.04 using Gunicorn and Nginx](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-gunicorn-and-nginx-on-ubuntu-20-04)
 * [Deploy your Flask application to Ubuntu 20.04 using uWSGI and Nginx](https://www.digitalocean.com/community/tutorials/how-to-serve-flask-applications-with-uwsgi-and-nginx-on-ubuntu-20-04)
 * [Deploy your Flask Application Using Docker on Ubuntu 18.04](https://www.digitalocean.com/community/tutorials/how-to-build-and-deploy-a-flask-application-using-docker-on-ubuntu-18-04)
 
-There are many more ways to deploy your application than just these. As always when it comes to deployments and infrastucture, do what works best for *you*.
+There are many more ways to deploy your application than just these. As always, when it comes to deployments and infrastucture, do what works best for *you*.
 
-## Conclusion
-You now have a Slackbot that tells the best type of jokes, Dad jokes that you can deploy into your slack workspace to amuse your friends. 
+In any case, you now have a Slackbot that you can use to flip a coin to help you make decisions, like what to eat for lunch.
 
-You can take this base code and modify it to fit your needs, whether it be automated support, resource management, pictures of cats, or whatever you can think of. You can view the complete Python Slack API docs [here](https://slack.dev/python-slackclient/).
+You can also take this base code and modify it to fit your needs, whether it be automated support, resource management, pictures of cats, or whatever you can think of. You can view the complete Python Slack API docs [here](https://slack.dev/python-slackclient/).
